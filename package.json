@@ -1,0 +1,17 @@
+{
+  "name": "diet-tracker",
+  "private": true,
+  "workspaces": [
+    "functions",
+    "frontend",
+    "shared"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev -w frontend",
+    "dev:functions": "npm run build:watch -w functions",
+    "emulators": "firebase emulators:start"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.0.0"
+  }
+}

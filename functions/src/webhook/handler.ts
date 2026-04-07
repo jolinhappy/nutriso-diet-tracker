@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { parseFoodMessage } from "../ai/parseFood";
+import { ensureUserExists } from "../firestore/userRepository";
+import { saveMeal } from "../firestore/mealRepository";
 
 interface LineTextMessage {
   type: "text";
@@ -48,8 +50,13 @@ export async function handleWebhook(
     const parsed = await parseFoodMessage(text);
     if (parsed === null) {
       console.log(`[webhook] AI 無法解析：${text}`);
-    } else {
-      console.log("[webhook] AI 解析結果:", JSON.stringify(parsed, null, 2));
+      continue;
     }
+
+    console.log("[webhook] AI 解析結果:", JSON.stringify(parsed, null, 2));
+
+    await ensureUserExists(userId);
+    const mealId = await saveMeal(userId, text, parsed);
+    console.log(`[webhook] 寫入成功 mealId: ${mealId}`);
   }
 }

@@ -16,8 +16,15 @@ webhookApp.use(webhookRouter);
 
 // API app
 const apiApp = express();
+apiApp.use((_req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-line-userid");
+  if (_req.method === "OPTIONS") { res.status(200).end(); return; }
+  next();
+});
 apiApp.use(express.json());
-apiApp.use("/", apiRouter);
+apiApp.use(apiRouter);
 
 export const webhook = functions.https.onRequest(webhookApp);
 export const api = functions.https.onRequest(apiApp);

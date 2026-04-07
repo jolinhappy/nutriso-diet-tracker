@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express'
-import { getUser, updateGoals } from '../firestore/userRepository'
+import { getUser, updateGoals, ensureUserExists } from '../firestore/userRepository'
 import { updateMeal, deleteMeal, MealUpdateData } from '../firestore/mealRepository'
 import { getDailyRecord, getHistory } from '../firestore/summaryRepository'
 import { NutritionGoals } from '../types'
@@ -22,6 +22,8 @@ router.use(requireAuth)
 router.get('/users/:lineUserId', async (req, res) => {
   try {
     const { lineUserId } = req.params
+    // 首次開啟 LIFF 時用戶可能尚未存在，自動建立（displayName 為空、goals 使用預設值）
+    await ensureUserExists(lineUserId)
     const user = await getUser(lineUserId)
     if (!user) {
       res.status(404).json({ success: false, error: 'User not found' })

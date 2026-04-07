@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { parseFoodMessage } from "../ai/parseFood";
 import { ensureUserExists } from "../firestore/userRepository";
 import { saveMeal } from "../firestore/mealRepository";
+import { getDailySummary } from "../firestore/summaryRepository";
+import { replyMessage, buildSuccessReply, PARSE_FAILURE_REPLY } from "./lineReply";
 
 interface LineTextMessage {
   type: "text";
@@ -47,9 +49,12 @@ export async function handleWebhook(
     console.log(`[webhook] message: "${text}"`);
     console.log(`[webhook] replyToken: ${event.replyToken}`);
 
+    const replyToken = event.replyToken ?? ''
+
     const parsed = await parseFoodMessage(text);
     if (parsed === null) {
       console.log(`[webhook] AI 無法解析：${text}`);
+      await replyMessage(replyToken, PARSE_FAILURE_REPLY);
       continue;
     }
 
@@ -58,5 +63,17 @@ export async function handleWebhook(
     await ensureUserExists(userId);
     const mealId = await saveMeal(userId, text, parsed);
     console.log(`[webhook] 寫入成功 mealId: ${mealId}`);
+
+    // saveMeal 已寫入，重新從 Firestore 撈今日加總（含剛寫入的這筆）
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Taipei',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+    const summary = await getDailySummary(userId, today);
+    const replyText = buildSuccessReply(parsed, summary);
+    await replyMessage(replyToken, replyText);
+    console.log(`[webhook] 已回覆 LINE userId: ${userId}`);
   }
 }

@@ -9,10 +9,7 @@
     "target": "es2020",
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "paths": {
-      "shared": ["../shared/types/index.ts"]
-    }
+    "skipLibCheck": true
   },
   "compileOnSave": true,
   "include": ["src", "index.ts"]

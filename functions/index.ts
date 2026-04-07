@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions";
 import express from "express";
 import webhookRouter from "./src/routes/webhook";
+import apiRouter from "./src/routes/api";
 
 // Webhook app — Firebase runtime 會自動保留 req.rawBody 供簽名驗證
 const webhookApp = express();
@@ -13,10 +14,10 @@ webhookApp.use((req, _res, next) => {
 });
 webhookApp.use(webhookRouter);
 
-// API app — 後續實作 REST API
+// API app
 const apiApp = express();
 apiApp.use(express.json());
-// TODO: apiApp.use('/', apiRouter)
+apiApp.use("/", apiRouter);
 
 export const webhook = functions.https.onRequest(webhookApp);
 export const api = functions.https.onRequest(apiApp);

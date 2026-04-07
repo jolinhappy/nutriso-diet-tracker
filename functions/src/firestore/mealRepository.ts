@@ -1,6 +1,6 @@
-import { FieldValue } from 'firebase-admin/firestore'
+import { FieldValue, DocumentReference } from 'firebase-admin/firestore'
 import { db } from './db'
-import { AiParsedMeal } from '../types'
+import { AiParsedMeal, FoodItem, MealType } from '../types'
 
 function getTaipeiDate(): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -43,4 +43,44 @@ export async function saveMeal(
 
   console.log(`[firestore] saved meal ${docRef.id} for ${lineUserId} on ${date}`)
   return docRef.id
+}
+
+export interface MealUpdateData {
+  mealType?: MealType
+  items?: FoodItem[]
+  totalCalories?: number
+  totalProtein?: number
+  totalCarbs?: number
+  totalFat?: number
+}
+
+// collectionGroup query — 生產環境需在 Firestore 建立 id 欄位的 single-field index
+async function findMealRef(
+  lineUserId: string,
+  mealId: string
+): Promise<DocumentReference | null> {
+  const snap = await db.collectionGroup('meals').where('id', '==', mealId).get()
+  const doc = snap.docs.find((d) => d.ref.path.includes(`/records/${lineUserId}/`))
+  return doc?.ref ?? null
+}
+
+export async function updateMeal(
+  lineUserId: string,
+  mealId: string,
+  data: MealUpdateData
+): Promise<boolean> {
+  const ref = await findMealRef(lineUserId, mealId)
+  if (!ref) return false
+  await ref.update({ ...data, updatedAt: FieldValue.serverTimestamp() })
+  return true
+}
+
+export async function deleteMeal(
+  lineUserId: string,
+  mealId: string
+): Promise<boolean> {
+  const ref = await findMealRef(lineUserId, mealId)
+  if (!ref) return false
+  await ref.delete()
+  return true
 }

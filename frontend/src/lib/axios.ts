@@ -3,6 +3,9 @@ import { getLineUserId } from './liff'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL as string,
+  headers: {
+    'ngrok-skip-browser-warning': 'true',
+  },
 })
 
 apiClient.interceptors.request.use((config) => {

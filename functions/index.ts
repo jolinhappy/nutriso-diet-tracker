@@ -19,7 +19,7 @@ const apiApp = express();
 apiApp.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-line-userid");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-line-userid, ngrok-skip-browser-warning");
   if (_req.method === "OPTIONS") { res.status(200).end(); return; }
   next();
 });

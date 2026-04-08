@@ -2,18 +2,11 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { db } from './db'
 import { NutritionGoals } from '../types'
 
-const DEFAULT_GOALS: NutritionGoals = {
-  calories: 2000,
-  protein: 60,
-  carbs: 250,
-  fat: 65,
-}
-
 export interface UserDoc {
   lineUserId: string
   displayName: string
   email: string | null
-  goals: NutritionGoals
+  goals: NutritionGoals | null
 }
 
 export async function getUser(lineUserId: string): Promise<UserDoc | null> {
@@ -42,7 +35,7 @@ export async function ensureUserExists(lineUserId: string): Promise<void> {
     lineUserId,
     displayName: '',
     email: null,
-    goals: DEFAULT_GOALS,
+    goals: null,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   })

@@ -9,12 +9,7 @@ export default function TodayPage() {
   const { data: user } = useUser();
   const { data: record, isLoading, error } = useTodayMeals(today);
 
-  const goals = user?.dailyGoals ?? {
-    calories: 2000,
-    protein: 60,
-    carbs: 250,
-    fat: 65,
-  };
+  const goals = user?.dailyGoals ?? null;
   const summary = record?.summary;
 
   return (
@@ -28,67 +23,74 @@ export default function TodayPage() {
       </div>
 
       {/* Nutrition Summary Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
-        {/* Calories - larger display */}
-        <div>
-          <div className="flex justify-between items-baseline mb-1.5">
-            <span className="text-sm font-semibold text-gray-700">熱量</span>
-            <div className="text-right">
-              <span className="text-xl font-bold text-primary-600">
-                {Math.round(summary?.totalCalories ?? 0)}
-              </span>
-              <span className="text-gray-400 text-sm">
-                {" "}
-                / {goals.calories} kcal
+      {!goals ? (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center space-y-2">
+          <p className="text-gray-600 text-sm font-medium">尚未設定每日目標</p>
+          <p className="text-gray-400 text-xs">請先前往「設定」頁面設定每日熱量與營養素目標，再開始記錄飲食</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+          {/* Calories - larger display */}
+          <div>
+            <div className="flex justify-between items-baseline mb-1.5">
+              <span className="text-sm font-semibold text-gray-700">熱量</span>
+              <div className="text-right">
+                <span className="text-xl font-bold text-primary-600">
+                  {Math.round(summary?.totalCalories ?? 0)}
+                </span>
+                <span className="text-gray-400 text-sm">
+                  {" "}
+                  / {goals.calories} kcal
+                </span>
+              </div>
+            </div>
+            <ProgressBar
+              label=""
+              current={summary?.totalCalories ?? 0}
+              goal={goals.calories}
+              unit=""
+              colorClass="bg-primary-500"
+            />
+          </div>
+
+          <div className="border-t border-gray-50 pt-3 space-y-2.5">
+            <ProgressBar
+              label="蛋白質"
+              current={summary?.totalProtein ?? 0}
+              goal={goals.protein}
+              unit="g"
+              colorClass="bg-blue-400"
+            />
+            <ProgressBar
+              label="碳水化合物"
+              current={summary?.totalCarbs ?? 0}
+              goal={goals.carbs}
+              unit="g"
+              colorClass="bg-orange-500"
+            />
+            <ProgressBar
+              label="脂肪"
+              current={summary?.totalFat ?? 0}
+              goal={goals.fat}
+              unit="g"
+              colorClass="bg-yellow-500"
+            />
+          </div>
+
+          {/* Remaining row */}
+          {summary && (
+            <div className="flex justify-around pt-1 border-t border-gray-50 text-xs text-gray-500">
+              <span>
+                剩餘熱量{" "}
+                <strong className="text-primary-600">
+                  {Math.round(summary.remainingCalories)}
+                </strong>{" "}
+                kcal
               </span>
             </div>
-          </div>
-          <ProgressBar
-            label=""
-            current={summary?.totalCalories ?? 0}
-            goal={goals.calories}
-            unit=""
-            colorClass="bg-primary-500"
-          />
+          )}
         </div>
-
-        <div className="border-t border-gray-50 pt-3 space-y-2.5">
-          <ProgressBar
-            label="蛋白質"
-            current={summary?.totalProtein ?? 0}
-            goal={goals.protein}
-            unit="g"
-            colorClass="bg-blue-400"
-          />
-          <ProgressBar
-            label="碳水化合物"
-            current={summary?.totalCarbs ?? 0}
-            goal={goals.carbs}
-            unit="g"
-            colorClass="bg-orange-500"
-          />
-          <ProgressBar
-            label="脂肪"
-            current={summary?.totalFat ?? 0}
-            goal={goals.fat}
-            unit="g"
-            colorClass="bg-yellow-500"
-          />
-        </div>
-
-        {/* Remaining row */}
-        {summary && (
-          <div className="flex justify-around pt-1 border-t border-gray-50 text-xs text-gray-500">
-            <span>
-              剩餘熱量{" "}
-              <strong className="text-primary-600">
-                {Math.round(summary.remainingCalories)}
-              </strong>{" "}
-              kcal
-            </span>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Meal List */}
       <div>

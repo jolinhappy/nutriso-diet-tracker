@@ -1,9 +1,12 @@
 import { Request, Response } from "express";
 import { parseFoodMessage } from "../ai/parseFood";
-import { ensureUserExists } from "../firestore/userRepository";
+import { ensureUserExists, getUser } from "../firestore/userRepository";
 import { saveMeal } from "../firestore/mealRepository";
 import { getDailySummary } from "../firestore/summaryRepository";
 import { replyMessage, buildSuccessReply, PARSE_FAILURE_REPLY } from "./lineReply";
+
+const NO_GOALS_REPLY =
+  "您尚未設定每日營養目標！\n請先開啟主頁面，前往「設定」標籤，設定每日熱量與蛋白質、碳水、脂肪目標後，再開始記錄飲食 🥗";
 
 interface LineTextMessage {
   type: "text";
@@ -51,6 +54,14 @@ export async function handleWebhook(
 
     const replyToken = event.replyToken ?? ''
 
+    await ensureUserExists(userId);
+    const user = await getUser(userId);
+    if (!user?.goals) {
+      console.log(`[webhook] 使用者尚未設定目標：${userId}`);
+      await replyMessage(replyToken, NO_GOALS_REPLY);
+      continue;
+    }
+
     const parsed = await parseFoodMessage(text);
     if (parsed === null) {
       console.log(`[webhook] AI 無法解析：${text}`);
@@ -59,8 +70,6 @@ export async function handleWebhook(
     }
 
     console.log("[webhook] AI 解析結果:", JSON.stringify(parsed, null, 2));
-
-    await ensureUserExists(userId);
     const mealId = await saveMeal(userId, text, parsed);
     console.log(`[webhook] 寫入成功 mealId: ${mealId}`);
 

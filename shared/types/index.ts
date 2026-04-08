@@ -35,7 +35,7 @@ export interface User {
   lineUserId: string;
   displayName: string;
   email: string | null;
-  dailyGoals: NutritionGoals;
+  dailyGoals: NutritionGoals | null;
 }
 
 export interface DailySummary {

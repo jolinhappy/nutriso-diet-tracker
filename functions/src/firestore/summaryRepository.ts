@@ -2,13 +2,6 @@ import { Timestamp } from 'firebase-admin/firestore'
 import { db } from './db'
 import { NutritionGoals, FoodItem, MealType } from '../types'
 
-const DEFAULT_GOALS: NutritionGoals = {
-  calories: 2000,
-  protein: 60,
-  carbs: 250,
-  fat: 65,
-}
-
 export interface DailySummary {
   totalCalories: number
   totalProtein: number
@@ -63,8 +56,8 @@ export async function getDailyRecord(
       .get(),
   ])
 
-  const goals: NutritionGoals =
-    (userSnap.data()?.goals as NutritionGoals | undefined) ?? DEFAULT_GOALS
+  const goals: NutritionGoals | null =
+    (userSnap.data()?.goals as NutritionGoals | null | undefined) ?? null
 
   const meals: MealRecord[] = mealsSnap.docs.map((doc) => {
     const d = doc.data()
@@ -100,10 +93,10 @@ export async function getDailyRecord(
       totalProtein,
       totalCarbs,
       totalFat,
-      remainingCalories: goals.calories - totalCalories,
-      remainingProtein: goals.protein - totalProtein,
-      remainingCarbs: goals.carbs - totalCarbs,
-      remainingFat: goals.fat - totalFat,
+      remainingCalories: goals ? goals.calories - totalCalories : 0,
+      remainingProtein: goals ? goals.protein - totalProtein : 0,
+      remainingCarbs: goals ? goals.carbs - totalCarbs : 0,
+      remainingFat: goals ? goals.fat - totalFat : 0,
     },
   }
 }
@@ -136,8 +129,8 @@ export async function getHistory(
     ),
   ])
 
-  const goals: NutritionGoals =
-    (userSnap.data()?.goals as NutritionGoals | undefined) ?? DEFAULT_GOALS
+  const goals: NutritionGoals | null =
+    (userSnap.data()?.goals as NutritionGoals | null | undefined) ?? null
 
   return dates.map((date, i) => {
     let totalCalories = 0
@@ -151,7 +144,7 @@ export async function getHistory(
       totalCarbs += (m.totalCarbs as number) ?? 0
       totalFat += (m.totalFat as number) ?? 0
     }
-    return { date, totalCalories, totalProtein, totalCarbs, totalFat, goalCalories: goals.calories }
+    return { date, totalCalories, totalProtein, totalCarbs, totalFat, goalCalories: goals?.calories ?? 0 }
   })
 }
 
@@ -170,8 +163,8 @@ export async function getDailySummary(
       .get(),
   ])
 
-  const goals: NutritionGoals =
-    (userSnap.data()?.goals as NutritionGoals | undefined) ?? DEFAULT_GOALS
+  const goals: NutritionGoals | null =
+    (userSnap.data()?.goals as NutritionGoals | null | undefined) ?? null
 
   let totalCalories = 0
   let totalProtein = 0
@@ -191,9 +184,9 @@ export async function getDailySummary(
     totalProtein,
     totalCarbs,
     totalFat,
-    remainingCalories: goals.calories - totalCalories,
-    remainingProtein: goals.protein - totalProtein,
-    remainingCarbs: goals.carbs - totalCarbs,
-    remainingFat: goals.fat - totalFat,
+    remainingCalories: goals ? goals.calories - totalCalories : 0,
+    remainingProtein: goals ? goals.protein - totalProtein : 0,
+    remainingCarbs: goals ? goals.carbs - totalCarbs : 0,
+    remainingFat: goals ? goals.fat - totalFat : 0,
   }
 }

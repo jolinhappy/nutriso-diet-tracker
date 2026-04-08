@@ -1,54 +1,45 @@
-import { useEffect, useState } from "react";
-import { initLiff } from "./lib/liff";
-import { useUser } from "./hooks/useUser";
+import { useEffect, useState } from 'react'
+import { initLiff } from './lib/liff'
+import Layout from './components/Layout'
 
-type LiffState = "initializing" | "ready" | "error";
-
-function UserInfo() {
-  const { data: user, isLoading, error } = useUser();
-
-  if (isLoading) return <p>載入用戶資料...</p>;
-  if (error) return <p>無法取得用戶資料：{String(error)}</p>;
-  if (!user) return null;
-
-  return (
-    <div>
-      <p>lineUserId: {user.lineUserId}</p>
-      <p>displayName: {user.displayName || "（未設定）"}</p>
-      <p>每日目標：</p>
-      <ul>
-        <li>熱量：{user.dailyGoals.calories} kcal</li>
-        <li>蛋白質：{user.dailyGoals.protein}g</li>
-        <li>碳水：{user.dailyGoals.carbs}g</li>
-        <li>脂肪：{user.dailyGoals.fat}g</li>
-      </ul>
-    </div>
-  );
-}
+type LiffState = 'initializing' | 'ready' | 'error'
 
 export default function App() {
-  const [liffState, setLiffState] = useState<LiffState>("initializing");
-  const [liffError, setLiffError] = useState<string>("");
+  const [liffState, setLiffState] = useState<LiffState>('initializing')
+  const [liffError, setLiffError] = useState('')
 
   useEffect(() => {
     initLiff()
-      .then(() => setLiffState("ready"))
+      .then(() => setLiffState('ready'))
       .catch((err: unknown) => {
-        if (err instanceof Error && err.message.startsWith("Redirecting"))
-          return;
-        console.error("LIFF init error:", err);
-        setLiffError(String(err));
-        setLiffState("error");
-      });
-  }, []);
+        if (err instanceof Error && err.message.startsWith('Redirecting')) return
+        console.error('LIFF init error:', err)
+        setLiffError(String(err))
+        setLiffState('error')
+      })
+  }, [])
 
-  if (liffState === "initializing") return <p>LIFF 初始化中...</p>;
-  if (liffState === "error") return <p>LIFF 初始化失敗：{liffError}</p>;
+  if (liffState === 'initializing') {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-primary-300 border-t-primary-500 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-400">載入中...</p>
+        </div>
+      </div>
+    )
+  }
 
-  return (
-    <div>
-      <h1>Diet Tracker</h1>
-      <UserInfo />
-    </div>
-  );
+  if (liffState === 'error') {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50 px-6">
+        <div className="text-center">
+          <p className="text-error-500 text-sm">初始化失敗</p>
+          <p className="text-gray-400 text-xs mt-1">{liffError}</p>
+        </div>
+      </div>
+    )
+  }
+
+  return <Layout />
 }

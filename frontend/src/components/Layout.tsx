@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import TodayPage from '../pages/TodayPage'
-import HistoryPage from '../pages/HistoryPage'
 import SettingsPage from '../pages/SettingsPage'
 
-type Tab = 'today' | 'history' | 'settings'
+type Tab = 'diary' | 'settings'
 
-function TodayIcon({ active }: { active: boolean }) {
+function DiaryIcon({ active }: { active: boolean }) {
   const c = active ? '#17B8D4' : '#A1A1A1'
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -14,17 +13,6 @@ function TodayIcon({ active }: { active: boolean }) {
       <path d="M8 3v4M16 3v4" stroke={c} strokeWidth="1.8" strokeLinecap="round"/>
       <rect x="7" y="13" width="3" height="2.5" rx="0.5" fill={c}/>
       <rect x="14" y="13" width="3" height="2.5" rx="0.5" fill={c}/>
-    </svg>
-  )
-}
-
-function HistoryIcon({ active }: { active: boolean }) {
-  const c = active ? '#17B8D4' : '#A1A1A1'
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <rect x="4" y="12" width="4" height="8" rx="1" fill={c}/>
-      <rect x="10" y="8" width="4" height="12" rx="1" fill={c}/>
-      <rect x="16" y="4" width="4" height="16" rx="1" fill={c}/>
     </svg>
   )
 }
@@ -43,19 +31,17 @@ function SettingsIcon({ active }: { active: boolean }) {
 }
 
 const TABS: { id: Tab; label: string; Icon: React.FC<{ active: boolean }> }[] = [
-  { id: 'today', label: '今日', Icon: TodayIcon },
-  { id: 'history', label: '歷史', Icon: HistoryIcon },
+  { id: 'diary', label: '飲食日記', Icon: DiaryIcon },
   { id: 'settings', label: '設定', Icon: SettingsIcon },
 ]
 
 export default function Layout() {
-  const [activeTab, setActiveTab] = useState<Tab>('today')
+  const [activeTab, setActiveTab] = useState<Tab>('diary')
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 max-w-lg mx-auto">
       <div className="flex-1 overflow-y-auto">
-        {activeTab === 'today' && <TodayPage />}
-        {activeTab === 'history' && <HistoryPage />}
+        {activeTab === 'diary' && <TodayPage />}
         {activeTab === 'settings' && <SettingsPage />}
       </div>
 

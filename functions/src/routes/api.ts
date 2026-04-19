@@ -80,13 +80,18 @@ router.get('/records/:lineUserId/daily/:date', async (req, res) => {
   }
 })
 
-// PUT /api/records/:lineUserId/meals/:mealId
+// PUT /api/records/:lineUserId/meals/:mealId?date=YYYY-MM-DD
 router.put('/records/:lineUserId/meals/:mealId', async (req, res) => {
   try {
     const { lineUserId, mealId } = req.params
+    const date = req.query.date as string
+    if (!date) {
+      res.status(400).json({ success: false, error: 'Missing date query param' })
+      return
+    }
     const data = req.body as MealUpdateData
 
-    const found = await updateMeal(lineUserId, mealId, data)
+    const found = await updateMeal(lineUserId, mealId, date, data)
     if (!found) {
       res.status(404).json({ success: false, error: 'Meal not found' })
       return
@@ -98,12 +103,17 @@ router.put('/records/:lineUserId/meals/:mealId', async (req, res) => {
   }
 })
 
-// DELETE /api/records/:lineUserId/meals/:mealId
+// DELETE /api/records/:lineUserId/meals/:mealId?date=YYYY-MM-DD
 router.delete('/records/:lineUserId/meals/:mealId', async (req, res) => {
   try {
     const { lineUserId, mealId } = req.params
+    const date = req.query.date as string
+    if (!date) {
+      res.status(400).json({ success: false, error: 'Missing date query param' })
+      return
+    }
 
-    const found = await deleteMeal(lineUserId, mealId)
+    const found = await deleteMeal(lineUserId, mealId, date)
     if (!found) {
       res.status(404).json({ success: false, error: 'Meal not found' })
       return

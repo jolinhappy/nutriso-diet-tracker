@@ -3,9 +3,10 @@ import express from "express";
 import webhookRouter from "./src/routes/webhook";
 import apiRouter from "./src/routes/api";
 
-// Webhook app — Firebase runtime 會自動保留 req.rawBody 供簽名驗證
+// Webhook app — 透過 verify callback 保留 rawBody 供簽名驗證（emulator 和正式環境都需要）
 const webhookApp = express();
-webhookApp.use(express.json());
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+webhookApp.use(express.json({ verify: (req: any, _res, buf) => { req.rawBody = buf } }));
 webhookApp.use((req, _res, next) => {
   console.log("[webhookApp] method:", req.method);
   console.log("[webhookApp] path:", req.path);

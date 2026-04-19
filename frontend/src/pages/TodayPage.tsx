@@ -11,7 +11,7 @@ export default function TodayPage() {
   const today = getTaipeiToday();
   const [date, setDate] = useState(today);
 
-  const { data: user } = useUser();
+  const { data: user, isLoading: userLoading } = useUser();
   const { data: record, isLoading, error } = useTodayMeals(date);
 
   const goals = user?.dailyGoals ?? null;
@@ -75,7 +75,11 @@ export default function TodayPage() {
       </div>
 
       {/* Nutrition Summary Card */}
-      {!goals ? (
+      {userLoading ? (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex justify-center">
+          <div className="w-6 h-6 border-2 border-gray-200 border-t-primary-500 rounded-full animate-spin" />
+        </div>
+      ) : !goals ? (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center space-y-2">
           <p className="text-gray-600 text-sm font-medium">尚未設定每日目標</p>
           <p className="text-gray-400 text-xs">

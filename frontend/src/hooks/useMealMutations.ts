@@ -18,7 +18,7 @@ export function useEditMeal(date: string) {
 
   return useMutation({
     mutationFn: ({ mealId, data }: { mealId: string; data: EditMealPayload }) =>
-      apiClient.put(`/api/records/${lineUserId}/meals/${mealId}`, data),
+      apiClient.put(`/api/records/${lineUserId}/meals/${mealId}?date=${date}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meals', lineUserId, date] })
       queryClient.invalidateQueries({ queryKey: ['summary', lineUserId, date] })
@@ -32,7 +32,7 @@ export function useDeleteMeal(date: string) {
 
   return useMutation({
     mutationFn: (mealId: string) =>
-      apiClient.delete(`/api/records/${lineUserId}/meals/${mealId}`),
+      apiClient.delete(`/api/records/${lineUserId}/meals/${mealId}?date=${date}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meals', lineUserId, date] })
       queryClient.invalidateQueries({ queryKey: ['summary', lineUserId, date] })

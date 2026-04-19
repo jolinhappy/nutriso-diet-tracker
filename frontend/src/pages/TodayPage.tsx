@@ -6,6 +6,7 @@ import ProgressBar from "../components/ProgressBar";
 import MealItem from "../components/MealItem";
 
 const MAX_DAYS_BACK = 30;
+const MEAL_ORDER = ['早餐', '午餐', '晚餐', '點心', '宵夜'];
 
 export default function TodayPage() {
   const today = getTaipeiToday();
@@ -177,7 +178,9 @@ export default function TodayPage() {
           )}
         {record?.meals && record.meals.length > 0 && (
           <div className="space-y-3">
-            {record.meals.map((meal) => (
+            {[...record.meals]
+              .sort((a, b) => MEAL_ORDER.indexOf(a.mealType) - MEAL_ORDER.indexOf(b.mealType))
+              .map((meal) => (
               <MealItem key={meal.id} meal={meal} date={date} />
             ))}
           </div>

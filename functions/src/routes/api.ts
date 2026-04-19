@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { getUser, updateGoals, ensureUserExists } from '../firestore/userRepository'
-import { updateMeal, deleteMeal, deleteMealItem, MealUpdateData } from '../firestore/mealRepository'
+import { updateMeal, deleteMeal, deleteMealItem, MealUpdateData, reorganizeMealItems, ItemWithTarget } from '../firestore/mealRepository'
 import { getDailyRecord, getHistory } from '../firestore/summaryRepository'
 import { NutritionGoals } from '../types'
 
@@ -148,6 +148,33 @@ router.delete('/records/:lineUserId/meals/:mealId/items/:itemIndex', async (req,
     res.json({ success: true, data: { deletedAt: new Date().toISOString() } })
   } catch (err) {
     console.error('[api] DELETE /meals/items error:', err)
+    res.status(500).json({ success: false, error: 'Internal server error' })
+  }
+})
+
+// PUT /api/records/:lineUserId/meals/:mealId/reorganize?date=YYYY-MM-DD
+router.put('/records/:lineUserId/meals/:mealId/reorganize', async (req, res) => {
+  try {
+    const { lineUserId, mealId } = req.params
+    const date = req.query.date as string
+    if (!date) {
+      res.status(400).json({ success: false, error: 'Missing date query param' })
+      return
+    }
+    const { items } = req.body as { items: ItemWithTarget[] }
+    if (!Array.isArray(items)) {
+      res.status(400).json({ success: false, error: 'Invalid items payload' })
+      return
+    }
+
+    const found = await reorganizeMealItems(lineUserId, mealId, date, items)
+    if (!found) {
+      res.status(404).json({ success: false, error: 'Meal not found' })
+      return
+    }
+    res.json({ success: true, data: { updatedAt: new Date().toISOString() } })
+  } catch (err) {
+    console.error('[api] PUT /meals/reorganize error:', err)
     res.status(500).json({ success: false, error: 'Internal server error' })
   }
 })

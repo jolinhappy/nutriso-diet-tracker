@@ -25,9 +25,36 @@ export async function saveMeal(
     .doc(date)
     .collection('meals')
 
-  // 先拿 auto-generated ID，再用 set 一次寫入（包含 id 欄位）
-  const docRef = mealsRef.doc()
+  // 查詢今天是否已有同餐別紀錄
+  const existing = await mealsRef.where('mealType', '==', meal.mealType).limit(1).get()
 
+  if (!existing.empty) {
+    // 合併到既有紀錄
+    const docRef = existing.docs[0].ref
+    const prev = existing.docs[0].data() as {
+      items: FoodItem[]
+      totalCalories: number
+      totalProtein: number
+      totalCarbs: number
+      totalFat: number
+    }
+
+    const mergedItems = [...prev.items, ...meal.items]
+    await docRef.update({
+      items: mergedItems,
+      totalCalories: prev.totalCalories + meal.totalCalories,
+      totalProtein:  prev.totalProtein  + meal.totalProtein,
+      totalCarbs:    prev.totalCarbs    + meal.totalCarbs,
+      totalFat:      prev.totalFat      + meal.totalFat,
+      updatedAt: FieldValue.serverTimestamp(),
+    })
+
+    console.log(`[firestore] merged meal ${docRef.id} for ${lineUserId} on ${date}`)
+    return docRef.id
+  }
+
+  // 新增
+  const docRef = mealsRef.doc()
   await docRef.set({
     id: docRef.id,
     mealType: meal.mealType,
@@ -43,6 +70,92 @@ export async function saveMeal(
 
   console.log(`[firestore] saved meal ${docRef.id} for ${lineUserId} on ${date}`)
   return docRef.id
+}
+
+function calcTotals(items: FoodItem[]) {
+  return {
+    totalCalories: items.reduce((s, it) => s + it.calories, 0),
+    totalProtein:  items.reduce((s, it) => s + it.protein, 0),
+    totalCarbs:    items.reduce((s, it) => s + it.carbs, 0),
+    totalFat:      items.reduce((s, it) => s + it.fat, 0),
+  }
+}
+
+export interface ItemWithTarget {
+  item: FoodItem
+  targetMealType: MealType
+}
+
+/**
+ * 按各 item 的目標餐別重新分配：
+ * - 留在原餐別的 → 更新原 meal（若全部移走則刪除）
+ * - 移往其他餐別的 → 合併到當天既有同類 meal，或新建
+ */
+export async function reorganizeMealItems(
+  lineUserId: string,
+  sourceMealId: string,
+  date: string,
+  itemsWithTargets: ItemWithTarget[]
+): Promise<boolean> {
+  const sourceRef = getMealRef(lineUserId, date, sourceMealId)
+  const sourceSnap = await sourceRef.get()
+  if (!sourceSnap.exists) return false
+
+  const sourceMealType = (sourceSnap.data() as { mealType: MealType }).mealType
+  const mealsRef = db
+    .collection('records')
+    .doc(lineUserId)
+    .collection('daily')
+    .doc(date)
+    .collection('meals')
+
+  // 按目標餐別分組
+  const groups = new Map<MealType, FoodItem[]>()
+  for (const { item, targetMealType } of itemsWithTargets) {
+    if (!groups.has(targetMealType)) groups.set(targetMealType, [])
+    groups.get(targetMealType)!.push(item)
+  }
+
+  // 處理原 meal（留下 or 刪除）
+  const stayingItems = groups.get(sourceMealType) ?? []
+  if (stayingItems.length === 0) {
+    await sourceRef.delete()
+  } else {
+    await sourceRef.update({
+      items: stayingItems,
+      ...calcTotals(stayingItems),
+      updatedAt: FieldValue.serverTimestamp(),
+    })
+  }
+
+  // 將移走的 items 合併到目標餐別
+  for (const [mealType, items] of groups) {
+    if (mealType === sourceMealType) continue
+
+    const existing = await mealsRef.where('mealType', '==', mealType).limit(1).get()
+    if (!existing.empty) {
+      const prev = existing.docs[0].data() as { items: FoodItem[] }
+      const merged = [...prev.items, ...items]
+      await existing.docs[0].ref.update({
+        items: merged,
+        ...calcTotals(merged),
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+    } else {
+      const newRef = mealsRef.doc()
+      await newRef.set({
+        id: newRef.id,
+        mealType,
+        description: `[移入] ${mealType}`,
+        items,
+        ...calcTotals(items),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+    }
+  }
+
+  return true
 }
 
 export interface MealUpdateData {

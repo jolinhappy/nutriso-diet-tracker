@@ -8,6 +8,7 @@ const client = new Anthropic({
 const SYSTEM_PROMPT = `你是一個專業的營養師助手。
 用戶會描述他們吃了什麼食物和份量，
 請解析成營養素資訊並以 JSON 格式回傳。
+份量（amount）必須以 g 或 ml 為單位（例如 "200g"、"250ml"），若用戶使用碗、片、顆等單位，請換算成最接近的公克數。
 只回傳 JSON，不要有其他文字。`;
 
 function buildUserPrompt(userMessage: string): string {
@@ -64,6 +65,7 @@ const IMAGE_SYSTEM_PROMPT = `你是一個專業的營養師助手。
 用戶會提供食物照片或營養標籤照片，
 請識別圖片中的食物和份量，解析成營養素資訊並以 JSON 格式回傳。
 如果是營養標籤，請直接讀取標籤上的數值。
+份量（amount）必須以 g 或 ml 為單位（例如 "200g"、"250ml"），若估算時使用碗、片、顆等單位，請換算成最接近的公克數。
 只回傳 JSON，不要有其他文字。`;
 
 type ImageMediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";

@@ -110,8 +110,14 @@ export async function handleWebhook(
         continue;
       }
 
+      // 若已有待處理圖片（未過期），只 append，不再重複送選餐別提示
+      const existingPending = await getPendingImages(userId);
       await appendPendingImage(userId, imageId);
-      await replyWithMealTypeSelection(replyToken);
+      if (!existingPending) {
+        await replyWithMealTypeSelection(replyToken);
+      } else {
+        console.log(`[webhook] 已有待處理圖片，靜默 append imageId: ${imageId}`);
+      }
       continue;
     }
 

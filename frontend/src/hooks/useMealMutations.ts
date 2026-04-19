@@ -26,6 +26,20 @@ export function useEditMeal(date: string) {
   })
 }
 
+export function useDeleteMealItem(date: string) {
+  const queryClient = useQueryClient()
+  const lineUserId = getLineUserId()
+
+  return useMutation({
+    mutationFn: ({ mealId, itemIndex }: { mealId: string; itemIndex: number }) =>
+      apiClient.delete(`/api/records/${lineUserId}/meals/${mealId}/items/${itemIndex}?date=${date}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meals', lineUserId, date] })
+      queryClient.invalidateQueries({ queryKey: ['summary', lineUserId, date] })
+    },
+  })
+}
+
 export function useDeleteMeal(date: string) {
   const queryClient = useQueryClient()
   const lineUserId = getLineUserId()

@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { getUser, updateGoals, ensureUserExists } from '../firestore/userRepository'
-import { updateMeal, deleteMeal, MealUpdateData } from '../firestore/mealRepository'
+import { updateMeal, deleteMeal, deleteMealItem, MealUpdateData } from '../firestore/mealRepository'
 import { getDailyRecord, getHistory } from '../firestore/summaryRepository'
 import { NutritionGoals } from '../types'
 
@@ -121,6 +121,33 @@ router.delete('/records/:lineUserId/meals/:mealId', async (req, res) => {
     res.json({ success: true, data: { deletedAt: new Date().toISOString() } })
   } catch (err) {
     console.error('[api] DELETE /meals error:', err)
+    res.status(500).json({ success: false, error: 'Internal server error' })
+  }
+})
+
+// DELETE /api/records/:lineUserId/meals/:mealId/items/:itemIndex?date=YYYY-MM-DD
+router.delete('/records/:lineUserId/meals/:mealId/items/:itemIndex', async (req, res) => {
+  try {
+    const { lineUserId, mealId, itemIndex } = req.params
+    const date = req.query.date as string
+    if (!date) {
+      res.status(400).json({ success: false, error: 'Missing date query param' })
+      return
+    }
+    const index = parseInt(itemIndex, 10)
+    if (isNaN(index)) {
+      res.status(400).json({ success: false, error: 'Invalid itemIndex' })
+      return
+    }
+
+    const found = await deleteMealItem(lineUserId, mealId, date, index)
+    if (!found) {
+      res.status(404).json({ success: false, error: 'Meal or item not found' })
+      return
+    }
+    res.json({ success: true, data: { deletedAt: new Date().toISOString() } })
+  } catch (err) {
+    console.error('[api] DELETE /meals/items error:', err)
     res.status(500).json({ success: false, error: 'Internal server error' })
   }
 })

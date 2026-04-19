@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Meal } from '../hooks/useTodayMeals'
-import { useEditMeal, useDeleteMeal, EditMealPayload } from '../hooks/useMealMutations'
+import { useEditMeal, useDeleteMeal, useDeleteMealItem, EditMealPayload } from '../hooks/useMealMutations'
 
 const MEAL_TYPES = ['早餐', '午餐', '晚餐', '點心', '宵夜'] as const
 
@@ -21,6 +21,7 @@ export default function MealItem({ meal, date }: MealItemProps) {
 
   const editMeal = useEditMeal(date)
   const deleteMeal = useDeleteMeal(date)
+  const deleteItem = useDeleteMealItem(date)
 
   function handleEdit() {
     setForm({
@@ -80,9 +81,19 @@ export default function MealItem({ meal, date }: MealItemProps) {
       {/* Items */}
       <div className="px-4 py-2.5 space-y-1">
         {meal.items.map((item, i) => (
-          <div key={i} className="flex justify-between text-sm">
-            <span className="text-gray-700">{item.name} {item.amount}</span>
+          <div key={i} className="flex items-center justify-between text-sm gap-2">
+            <span className="text-gray-700 flex-1">{item.name} {item.amount}</span>
             <span className="text-gray-400 text-xs">{Math.round(item.calories)} kcal</span>
+            <button
+              onClick={() => deleteItem.mutate({ mealId: meal.id, itemIndex: i })}
+              disabled={deleteItem.isPending}
+              className="text-gray-300 hover:text-error-400 active:text-error-500 disabled:opacity-40 transition-colors"
+              aria-label={`刪除 ${item.name}`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
           </div>
         ))}
       </div>

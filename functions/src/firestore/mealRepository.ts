@@ -88,3 +88,47 @@ export async function deleteMeal(
   await ref.delete()
   return true
 }
+
+export async function deleteMealItem(
+  lineUserId: string,
+  mealId: string,
+  date: string,
+  itemIndex: number
+): Promise<boolean> {
+  const ref = getMealRef(lineUserId, date, mealId)
+  const snap = await ref.get()
+  if (!snap.exists) return false
+
+  const data = snap.data() as {
+    items: FoodItem[]
+    totalCalories: number
+    totalProtein: number
+    totalCarbs: number
+    totalFat: number
+  }
+
+  if (itemIndex < 0 || itemIndex >= data.items.length) return false
+
+  const newItems = data.items.filter((_, i) => i !== itemIndex)
+
+  // 最後一項刪掉就刪整筆 meal
+  if (newItems.length === 0) {
+    await ref.delete()
+    return true
+  }
+
+  const totalCalories = newItems.reduce((s, item) => s + item.calories, 0)
+  const totalProtein  = newItems.reduce((s, item) => s + item.protein, 0)
+  const totalCarbs    = newItems.reduce((s, item) => s + item.carbs, 0)
+  const totalFat      = newItems.reduce((s, item) => s + item.fat, 0)
+
+  await ref.update({
+    items: newItems,
+    totalCalories,
+    totalProtein,
+    totalCarbs,
+    totalFat,
+    updatedAt: FieldValue.serverTimestamp(),
+  })
+  return true
+}

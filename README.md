@@ -1,6 +1,11 @@
-# 飲食紀錄小工具
+# Nutriso 飲食紀錄小工具
 
 結合 LINE Bot + LIFF 的每日飲食紀錄工具。透過 LINE 傳送文字或照片描述飲食，AI 自動解析營養素，LIFF 頁面可查看圖表與管理紀錄。
+
+<img width="466" height="1000" alt="712823_0" src="https://github.com/user-attachments/assets/c4f63721-fdd7-4590-bcac-85a9a2a1f0fd" />
+
+<img width="466" height="1000" alt="712822_0" src="https://github.com/user-attachments/assets/ab2c92f3-ecae-4468-b6b7-8cd673e8aa22" />
+
 
 ## 功能
 

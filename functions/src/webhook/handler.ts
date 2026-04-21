@@ -69,9 +69,6 @@ export async function handleWebhook(
 ): Promise<void> {
   const body = req.body as LineWebhookBody;
 
-  // LINE 要求盡快回應 200，避免 timeout retry
-  res.status(200).json({ status: "ok" });
-
   for (const event of body.events) {
     if (event.type !== "message") {
       console.log(`[webhook] skip event type: ${event.type}`);
@@ -180,4 +177,6 @@ export async function handleWebhook(
     await replyMessage(replyToken, buildSuccessReply(parsed, summary));
     console.log(`[webhook] 已回覆文字紀錄 userId: ${userId}`);
   }
+
+  res.status(200).json({ status: "ok" });
 }

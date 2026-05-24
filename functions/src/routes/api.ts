@@ -1,8 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { getUser, updateGoals, ensureUserExists } from '../firestore/userRepository'
-import { updateMeal, deleteMeal, deleteMealItem, MealUpdateData, reorganizeMealItems, ItemWithTarget } from '../firestore/mealRepository'
+import { updateMeal, deleteMeal, deleteMealItem, MealUpdateData, reorganizeMealItems, ItemWithTarget, saveMealToDate } from '../firestore/mealRepository'
 import { getDailyRecord, getHistory } from '../firestore/summaryRepository'
-import { NutritionGoals } from '../types'
+import { NutritionGoals, MealType, FoodItem } from '../types'
 
 const router = Router()
 
@@ -76,6 +76,48 @@ router.get('/records/:lineUserId/daily/:date', async (req, res) => {
     res.json({ success: true, data: record })
   } catch (err) {
     console.error('[api] GET /daily error:', err)
+    res.status(500).json({ success: false, error: 'Internal server error' })
+  }
+})
+
+// POST /api/records/:lineUserId/meals
+router.post('/records/:lineUserId/meals', async (req, res) => {
+  try {
+    const { lineUserId } = req.params
+    const { date, mealType, item } = req.body as {
+      date: string
+      mealType: MealType
+      item: FoodItem
+    }
+
+    const VALID_MEAL_TYPES: MealType[] = ['早餐', '午餐', '晚餐', '點心', '宵夜']
+
+    if (
+      typeof date !== 'string' ||
+      !VALID_MEAL_TYPES.includes(mealType) ||
+      typeof item?.name !== 'string' || item.name.trim() === '' ||
+      typeof item?.calories !== 'number' ||
+      typeof item?.protein !== 'number' ||
+      typeof item?.carbs !== 'number' ||
+      typeof item?.fat !== 'number'
+    ) {
+      res.status(400).json({ success: false, error: 'Invalid payload' })
+      return
+    }
+
+    const parsedMeal = {
+      mealType,
+      items: [{ ...item, amount: item.amount ?? '' }],
+      totalCalories: item.calories,
+      totalProtein: item.protein,
+      totalCarbs: item.carbs,
+      totalFat: item.fat,
+    }
+
+    const mealId = await saveMealToDate(lineUserId, date, item.name, parsedMeal)
+    res.json({ success: true, data: { mealId } })
+  } catch (err) {
+    console.error('[api] POST /meals error:', err)
     res.status(500).json({ success: false, error: 'Internal server error' })
   }
 })

@@ -11,6 +11,63 @@ function getTaipeiDate(): string {
   }).format(new Date())
 }
 
+export async function saveMealToDate(
+  lineUserId: string,
+  date: string,
+  description: string,
+  meal: AiParsedMeal
+): Promise<string> {
+  const mealsRef = db
+    .collection('records')
+    .doc(lineUserId)
+    .collection('daily')
+    .doc(date)
+    .collection('meals')
+
+  const existing = await mealsRef.where('mealType', '==', meal.mealType).limit(1).get()
+
+  if (!existing.empty) {
+    const docRef = existing.docs[0].ref
+    const prev = existing.docs[0].data() as {
+      items: FoodItem[]
+      totalCalories: number
+      totalProtein: number
+      totalCarbs: number
+      totalFat: number
+    }
+
+    const mergedItems = [...prev.items, ...meal.items]
+    await docRef.update({
+      items: mergedItems,
+      totalCalories: prev.totalCalories + meal.totalCalories,
+      totalProtein:  prev.totalProtein  + meal.totalProtein,
+      totalCarbs:    prev.totalCarbs    + meal.totalCarbs,
+      totalFat:      prev.totalFat      + meal.totalFat,
+      updatedAt: FieldValue.serverTimestamp(),
+    })
+
+    console.log(`[firestore] merged meal ${docRef.id} for ${lineUserId} on ${date}`)
+    return docRef.id
+  }
+
+  const docRef = mealsRef.doc()
+  await docRef.set({
+    id: docRef.id,
+    mealType: meal.mealType,
+    description,
+    items: meal.items,
+    totalCalories: meal.totalCalories,
+    totalProtein: meal.totalProtein,
+    totalCarbs: meal.totalCarbs,
+    totalFat: meal.totalFat,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  })
+
+  console.log(`[firestore] saved meal ${docRef.id} for ${lineUserId} on ${date}`)
+  return docRef.id
+}
+
 export async function saveMeal(
   lineUserId: string,
   description: string,

@@ -130,6 +130,33 @@ Response：
 }
 
 ---
+
+### POST /api/records/:lineUserId/meals
+手動新增單筆食物到指定餐別（LIFF 手動新增功能使用）
+
+若當天同餐別已有紀錄，會自動合併 items 並累加營養素（與 LINE Bot 行為一致）。
+
+Request：
+{
+  "date": "2026-04-04",
+  "mealType": "午餐",
+  "item": {
+    "name": "雞胸肉",
+    "amount": "150g",
+    "calories": 165,
+    "protein": 35,
+    "carbs": 0,
+    "fat": 3
+  }
+}
+
+Response：
+{
+  "success": true,
+  "data": { "mealId": "meal_001" }
+}
+
+---
 ### PUT /api/records/:lineUserId/meals/:mealId
 編輯指定餐點（LIFF 編輯功能使用）
 

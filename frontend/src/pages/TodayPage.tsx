@@ -4,6 +4,7 @@ import { useUser } from "../hooks/useUser";
 import { useTodayMeals } from "../hooks/useTodayMeals";
 import ProgressBar from "../components/ProgressBar";
 import MealItem from "../components/MealItem";
+import AddMealModal from "../components/AddMealModal";
 
 const MAX_DAYS_BACK = 30;
 const MEAL_ORDER = ['早餐', '午餐', '晚餐', '點心', '宵夜'];
@@ -11,6 +12,7 @@ const MEAL_ORDER = ['早餐', '午餐', '晚餐', '點心', '宵夜'];
 export default function TodayPage() {
   const today = getTaipeiToday();
   const [date, setDate] = useState(today);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const { data: user, isLoading: userLoading } = useUser();
   const { data: record, isLoading, error } = useTodayMeals(date);
@@ -153,9 +155,20 @@ export default function TodayPage() {
 
       {/* Meal List */}
       <div>
-        <h2 className="text-sm font-semibold text-gray-700 mb-2.5">
-          {isToday ? "今日餐點" : `${formatDateLabel(date, today)}餐點`}
-        </h2>
+        <div className="flex items-center justify-between mb-2.5">
+          <h2 className="text-sm font-semibold text-gray-700">
+            {isToday ? "今日餐點" : `${formatDateLabel(date, today)}餐點`}
+          </h2>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700 active:text-primary-800"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            新增食物
+          </button>
+        </div>
 
         {isLoading && (
           <div className="text-center text-gray-400 text-sm py-8">
@@ -186,6 +199,12 @@ export default function TodayPage() {
           </div>
         )}
       </div>
+
+      <AddMealModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        date={date}
+      />
     </div>
   );
 }

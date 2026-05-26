@@ -20,6 +20,17 @@ export interface AiParsedMeal {
   totalFat: number
 }
 
+export interface FoodLibraryItem {
+  id: string
+  name: string
+  amount: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  usageCount: number
+}
+
 export interface NutritionGoals {
   calories: number
   protein: number

@@ -4,6 +4,8 @@
 結合 LINE Bot + LIFF 的每日飲食紀錄工具。
 使用者透過 LINE 訊息記錄飲食，AI 會自動解析營養素及熱量，LIFF 頁面可以查看已攝取營養素圖表與管理紀錄。
 
+**手動新增食物**：LIFF 網頁支援手動輸入單筆食物，欄位包含食物名稱、份量單位、熱量、蛋白質、碳水、脂肪，並選擇餐別（早餐/午餐/晚餐/點心/宵夜）。透過 `POST /api/records/:lineUserId/meals` 儲存，後端使用 `saveMealToDate()` 邏輯（與 LINE Bot 相同的合併策略：同餐別自動合併）。
+
 ## 技術棧
 - 前端：React + TypeScript + Tailwind CSS + LIFF SDK (@line/liff) + Axios + React Query
 - 後端：Express + Firebase Functions
@@ -149,3 +151,20 @@ colors: {
 - Firebase Functions 使用 firebase-functions v4+
 - React Query 套件名稱是 @tanstack/react-query
 - service-account 不 commit 進 git
+
+## 已知坑（踩過請勿重蹈）
+
+### Node 版本
+- 系統預設 Node 是 v10，TypeScript build 會炸
+- 所有 build / deploy 前必須先 `nvm use 20`
+
+### Firebase Functions webhook handler
+- **不可以**在 for loop 前就送出 `res.status(200)`
+- Firebase Functions 送出 response 後會終止 function，後續 async 操作不保證執行
+- 正確做法：處理完所有事件後，在 handler 最後才送 `res.status(200).json({ status: "ok" })`
+
+### 環境變數
+- Vite 的 `envDir` 設為 `"."`，env 檔是 `frontend/.env`（不是 root）
+- 前端 build 前確認 `frontend/.env` 有填完整（`VITE_LIFF_ID` 等）
+- `functions/.env` 的 secrets（LINE key、Claude key）正式環境存在 Secret Manager，本地開發才填 `.env`
+- `functions/.env` 清空 secrets 後，本地 emulator 要重新填才能跑

@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useAddMeal } from "../hooks/useAddMeal";
 import { MealType } from "../hooks/useMealMutations";
+import {
+  useFoodLibrary,
+  useDeleteFoodFromLibrary,
+  FoodLibraryItem,
+} from "../hooks/useFoodLibrary";
 
 const MEAL_TYPES: MealType[] = ["早餐", "午餐", "晚餐", "點心", "宵夜"];
 
@@ -41,13 +46,39 @@ export default function AddMealModal({
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({});
+  const [search, setSearch] = useState("");
+
   const { mutate, isPending } = useAddMeal(date);
+  const { data: library = [] } = useFoodLibrary();
+  const { mutate: deleteFood } = useDeleteFoodFromLibrary();
 
   if (!isOpen) return null;
+
+  const filtered = search.trim()
+    ? library
+        .filter((f) =>
+          f.name.toLowerCase().includes(search.trim().toLowerCase()),
+        )
+        .slice(0, 8)
+    : [];
 
   function handleFormDataChange(field: keyof FormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
+  }
+
+  function applyLibraryItem(item: FoodLibraryItem) {
+    setForm((prev) => ({
+      ...prev,
+      name: item.name,
+      amount: item.amount,
+      calories: String(item.calories),
+      protein: String(item.protein),
+      carbs: String(item.carbs),
+      fat: String(item.fat),
+    }));
+    setErrors({});
+    setSearch("");
   }
 
   function validate(): boolean {
@@ -83,6 +114,7 @@ export default function AddMealModal({
         onSuccess: () => {
           setForm(emptyForm(defaultMealType));
           setErrors({});
+          setSearch("");
           onClose();
         },
       },
@@ -99,11 +131,108 @@ export default function AddMealModal({
       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
       onClick={handleOverlayClick}
     >
-      <div className="w-full max-w-lg bg-white rounded-t-2xl px-4 pt-5 pb-8">
+      <div className="w-full max-w-lg bg-white rounded-t-2xl px-4 pt-5 pb-8 max-h-[90vh] overflow-y-auto">
         {/* Handle bar */}
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
 
-        <h2 className="text-base font-bold text-gray-800 mb-4">新增食物</h2>
+        <h2 className="text-base font-bold text-gray-800 mb-3">新增食物</h2>
+
+        {/* 食物庫搜尋 */}
+        {library.length > 0 && (
+          <div className="mb-4">
+            <div className="relative">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="8"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M21 21l-4.35-4.35"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <input
+                type="text"
+                placeholder="從食物庫快速選擇..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-sm outline-none focus:border-primary-500"
+              />
+            </div>
+
+            {filtered.length > 0 && (
+              <div className="mt-1 border border-gray-100 rounded-xl overflow-hidden">
+                {filtered.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 cursor-pointer ${
+                      idx < filtered.length - 1
+                        ? "border-b border-gray-100"
+                        : ""
+                    }`}
+                    onClick={() => applyLibraryItem(item)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm text-gray-800 font-medium truncate block">
+                        {item.name}
+                      </span>
+                      {item.amount && (
+                        <span className="text-xs text-gray-400">
+                          {item.amount}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 ml-2 shrink-0">
+                      <span className="text-xs text-gray-500">
+                        {item.calories} kcal
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteFood(item.id);
+                        }}
+                        className="text-gray-300 hover:text-error-400 transition-colors p-0.5"
+                        aria-label="從食物庫移除"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <path
+                            d="M18 6L6 18M6 6l12 12"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {search.trim() && filtered.length === 0 && (
+              <p className="text-xs text-gray-400 mt-1 px-1">
+                找不到符合的食物
+              </p>
+            )}
+          </div>
+        )}
 
         {/* 餐別 */}
         <div className="mb-3">

@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express'
 import { getUser, updateGoals, ensureUserExists } from '../firestore/userRepository'
 import { updateMeal, deleteMeal, deleteMealItem, MealUpdateData, reorganizeMealItems, ItemWithTarget, saveMealToDate } from '../firestore/mealRepository'
 import { getDailyRecord, getHistory } from '../firestore/summaryRepository'
+import { getFoodLibrary, deleteFoodFromLibrary } from '../firestore/foodLibraryRepository'
 import { NutritionGoals, MealType, FoodItem } from '../types'
 
 const router = Router()
@@ -231,6 +232,34 @@ router.get('/records/:lineUserId/history', async (req, res) => {
     res.json({ success: true, data: history })
   } catch (err) {
     console.error('[api] GET /history error:', err)
+    res.status(500).json({ success: false, error: 'Internal server error' })
+  }
+})
+
+// GET /api/users/:lineUserId/food-library
+router.get('/users/:lineUserId/food-library', async (req, res) => {
+  try {
+    const { lineUserId } = req.params
+    const items = await getFoodLibrary(lineUserId)
+    res.json({ success: true, data: items })
+  } catch (err) {
+    console.error('[api] GET /food-library error:', err)
+    res.status(500).json({ success: false, error: 'Internal server error' })
+  }
+})
+
+// DELETE /api/users/:lineUserId/food-library/:foodId
+router.delete('/users/:lineUserId/food-library/:foodId', async (req, res) => {
+  try {
+    const { lineUserId, foodId } = req.params
+    const found = await deleteFoodFromLibrary(lineUserId, foodId)
+    if (!found) {
+      res.status(404).json({ success: false, error: 'Food not found' })
+      return
+    }
+    res.json({ success: true, data: { deletedAt: new Date().toISOString() } })
+  } catch (err) {
+    console.error('[api] DELETE /food-library error:', err)
     res.status(500).json({ success: false, error: 'Internal server error' })
   }
 })

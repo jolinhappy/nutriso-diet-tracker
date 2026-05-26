@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore'
 import { db } from './db'
 import { AiParsedMeal, FoodItem, MealType } from '../types'
+import { upsertFoodItem } from './foodLibraryRepository'
 
 function getTaipeiDate(): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -47,6 +48,7 @@ export async function saveMealToDate(
     })
 
     console.log(`[firestore] merged meal ${docRef.id} for ${lineUserId} on ${date}`)
+    await Promise.all(meal.items.map(item => upsertFoodItem(lineUserId, item)))
     return docRef.id
   }
 
@@ -65,6 +67,7 @@ export async function saveMealToDate(
   })
 
   console.log(`[firestore] saved meal ${docRef.id} for ${lineUserId} on ${date}`)
+  await Promise.all(meal.items.map(item => upsertFoodItem(lineUserId, item)))
   return docRef.id
 }
 
@@ -107,6 +110,7 @@ export async function saveMeal(
     })
 
     console.log(`[firestore] merged meal ${docRef.id} for ${lineUserId} on ${date}`)
+    await Promise.all(meal.items.map(item => upsertFoodItem(lineUserId, item)))
     return docRef.id
   }
 
@@ -126,6 +130,7 @@ export async function saveMeal(
   })
 
   console.log(`[firestore] saved meal ${docRef.id} for ${lineUserId} on ${date}`)
+  await Promise.all(meal.items.map(item => upsertFoodItem(lineUserId, item)))
   return docRef.id
 }
 

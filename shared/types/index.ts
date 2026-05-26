@@ -70,6 +70,17 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+export interface FoodLibraryItem {
+  id: string;
+  name: string;
+  amount: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  usageCount: number;
+}
+
 // Claude AI 解析結果
 export interface AiParsedMeal {
   mealType: MealType;

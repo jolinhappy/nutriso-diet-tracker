@@ -1,170 +1,37 @@
 # 飲食紀錄小工具
-
-## 專案概述
-結合 LINE Bot + LIFF 的每日飲食紀錄工具。
-使用者透過 LINE 訊息記錄飲食，AI 會自動解析營養素及熱量，LIFF 頁面可以查看已攝取營養素圖表與管理紀錄。
-
-**手動新增食物**：LIFF 網頁支援手動輸入單筆食物，欄位包含食物名稱、份量單位、熱量、蛋白質、碳水、脂肪，並選擇餐別（早餐/午餐/晚餐/點心/宵夜）。透過 `POST /api/records/:lineUserId/meals` 儲存，後端使用 `saveMealToDate()` 邏輯（與 LINE Bot 相同的合併策略：同餐別自動合併）。
+LINE Bot + LIFF 飲食紀錄。LINE 訊息輸入 → AI 解析營養素 → LIFF 查看圖表。
 
 ## 技術棧
-- 前端：React + TypeScript + Tailwind CSS + LIFF SDK (@line/liff) + Axios + React Query
-- 後端：Express + Firebase Functions
-- 資料庫：Firestore
-- AI：Claude Haiku 4.5 API（食物營養素解析）
-- 訊息：LINE Messaging API (Webhook)
+React + TypeScript + Tailwind + LIFF SDK | Express + Firebase Functions + Firestore | Claude Haiku 4.5（營養解析）
 
-## Monorepo 管理
-- 使用 npm workspaces 管理 monorepo
-- 根目錄 package.json 定義 workspaces：
-  - functions/（後端）
-  - frontend/（前端）
-  - shared/（共用型別）
-- 安裝套件時注意：
-  - 根目錄共用工具：npm install -D {套件} -w root
-  - 前端套件：npm install {套件} -w src
-  - 後端套件：npm install {套件} -w functions
-
-## 目錄結構
-functions/src/
-  webhook/    # LINE Webhook handler
-  ai/         # Claude API 呼叫
-  firestore/  # Firestore CRUD
-  routes/     # Express routes
-frontend/src/
-  components/ # UI 元件
-  pages/      # Tab 頁面
-  hooks/      # Custom hooks
-  lib/        # Axios instance、LIFF 初始化
-  types/      # TypeScript 型別
-shared/
-  types/      # 前後端共用型別
+## Monorepo（npm workspaces）
+- 根目錄工具：npm install -D {pkg} -w root
+- 前端套件：npm install {pkg} -w src（⚠️ 不是 frontend）
+- 後端套件：npm install {pkg} -w functions
 
 ## 核心規則
-- 前端不直接使用 Firebase SDK 存取 Firestore
-- 所有資料操作（讀取、寫入）一律透過 Express API
+- 前端**不可**直接存取 Firestore，一律透過 Express API
 - Firestore 只有 functions/src/firestore/ 可以存取
 
-## React Query 規範
-- 所有 API 呼叫一律透過 React Query 管理，不直接在元件裡用 useEffect + fetch
-- Query Key 統一定義：
-  - 用戶資料：['user', lineUserId]
-  - 今日餐點：['meals', lineUserId, date]
-  - 今日摘要：['summary', lineUserId, date]
-  - 歷史紀錄：['history', lineUserId, days]
-- invalidateQueries 連動規則：
-  - 新增/編輯/刪除餐點後：invalidate meals + summary
-  - 更新營養素目標後：invalidate user + summary
-
-## 開發規範
-- 使用 TypeScript（前後端皆是）
-- 使用 2 格空格縮排
-- 非同步操作一律使用 async/await，不用 .then()
-- 環境變數統一用 `.env` 管理，不可 hardcode 任何 API key
-
-## 開發參考文件
-- 詳細架構與資料流：@docs/architecture.md
-- Firestore schema：@docs/schema.md
-- API 規格：@docs/api.md
+## React Query
+- Query keys：['user', id] | ['meals', id, date] | ['summary', id, date] | ['history', id, days]
+- invalidate 規則：新增/編輯/刪除餐點 → meals + summary；更新目標 → user + summary
 
 ## 開發環境
-- LINE Webhook 本地開發需搭配 ngrok
-- 本地啟動指令：firebase emulators:start
-- ngrok 啟動指令：ngrok http 5001
-- Webhook URL 格式（本地）：https://{ngrok-id}.ngrok.io/你的專案ID/us-central1/webhook
-- Webhook URL 格式（正式）：https://us-central1-{projectId}.cloudfunctions.net/webhook
+- 啟動：firebase emulators:start
+- ngrok：ngrok http 5001
+- Webhook 本地：https://{ngrok-id}.ngrok.io/{projectId}/us-central1/webhook
+- 色系定義：tailwind.config.js（primary 主色 #17B8D4）
+- 參考文件：@docs/architecture.md、@docs/schema.md、@docs/api.md
 
-## UI 色系規範
-以下色碼下去呈現 UI 介面
-```
-colors: {
-  primary: {
-    800: '#083F49',
-    700: '#0E6F81',
-    600: '#128EA4',
-    // Main
-    500: '#17B8D4',
-    400: '#4DD4EC',
-    300: '#A1E8F5',
-    200: '#D0F4FA',
-    100: '#FAFEFE',
-  },
-  orange: {
-    600: '#DD7200',
-    500: '#F77F00',
-    400: '#FF972A',
-    300: '#FFB96E',
-    200: '#FFE5C9',
-    100: '#FFF8F1',
-  },
-  yellow: {
-    600: '#DCB900',
-    500: '#FFD700',
-    400: '#FFE55C',
-    300: '#FFED8D',
-    200: '#FFF8CF',
-    100: '#FFFCED',
-  },
-  error: {
-    600: '#961316',
-    500: '#961316',
-    400: '#E32227',
-    300: '#ED7377',
-    200: '#F9D2D3',
-    100: '#FFF5F5',
-  },
-  text: '#000000',
-  white: '#FFFFFF',
-  gray: {
-    700: '#2C2C2C',
-    600: '#575757',
-    500: '#787878',
-    400: '#A1A1A1',
-    300: '#C5C5C5',
-    200: '#DEDEDE',
-    100: '#EEEEEE',
-  },
-  blue: {
-    500: '#0F4C8A',
-    400: '#146AC3',
-    300: '#338DEA',
-    200: '#7FB8F2',
-    100: '#CFE4FA',
-  },
-  black: {
-    '80%': 'rgba(0, 0, 0, 0.8)',
-    '65%': 'rgba(0, 0, 0, 0.65)',
-    '50%': 'rgba(0, 0, 0, 0.5)',
-    '35%': 'rgba(0, 0, 0, 0.35)',
-  },
-},
-```
+## ⚠️ 已知坑
 
-## 環境變數
-- 環境變數範本：根目錄 .env.example（前端）、functions/.env.example（後端）
-- 實際值填入對應的 .env，不可 commit
-- lineUserId 是執行期間動態取得，不是環境變數
-  - 前端：liff.getProfile() 取得
-  - 後端：LINE Webhook payload 或 request header 取得
+**Node 版本**：系統預設 v10 會炸，build/deploy 前必須 `nvm use 20`
 
-## 注意事項
-- LIFF SDK 使用 @line/liff，不是其他第三方套件
-- Firebase Functions 使用 firebase-functions v4+
-- React Query 套件名稱是 @tanstack/react-query
-- service-account 不 commit 進 git
+**Webhook handler**：不可在 for loop 前送 res.status(200)，Functions 回應後即終止。
+正確做法：所有事件處理完畢後，最後才 `res.status(200).json({ status: "ok" })`
 
-## 已知坑（踩過請勿重蹈）
-
-### Node 版本
-- 系統預設 Node 是 v10，TypeScript build 會炸
-- 所有 build / deploy 前必須先 `nvm use 20`
-
-### Firebase Functions webhook handler
-- **不可以**在 for loop 前就送出 `res.status(200)`
-- Firebase Functions 送出 response 後會終止 function，後續 async 操作不保證執行
-- 正確做法：處理完所有事件後，在 handler 最後才送 `res.status(200).json({ status: "ok" })`
-
-### 環境變數
-- Vite 的 `envDir` 設為 `"."`，env 檔是 `frontend/.env`（不是 root）
-- 前端 build 前確認 `frontend/.env` 有填完整（`VITE_LIFF_ID` 等）
-- `functions/.env` 的 secrets（LINE key、Claude key）正式環境存在 Secret Manager，本地開發才填 `.env`
-- `functions/.env` 清空 secrets 後，本地 emulator 要重新填才能跑
+**環境變數**：
+- Vite envDir 設為 "."，env 檔是 frontend/.env（不是 root）
+- functions/.env secrets 正式環境存 Secret Manager，本地才填 .env
+- lineUserId 是執行期動態取得（前端 liff.getProfile()，後端 Webhook payload）
